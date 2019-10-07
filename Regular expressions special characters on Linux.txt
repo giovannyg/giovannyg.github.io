@@ -1,0 +1,221 @@
+Regular expressions - Special characters
+
+.*[]^${}\+?|()
+
+
+Anchor characters
+--------------------------------------------------------------
+
+The caret character (^) defi nes a pattern that starts at the beginning of a line of text in
+the data stream: 
+
+$ echo "The book store" | sed -n '/^book/p'
+$
+$ echo "Books are great" | sed -n '/^Book/p'
+Books
+
+If you position the caret character in any place other than at the beginning of the pattern,
+it acts like a normal character and not as a special character:
+
+$ echo "This ^ is a test" | sed -n '/s ^/p'
+This ^ is a test
+
+---------------------------
+
+The opposite of looking for a pattern at the start of a line is looking for it at the end of a
+line. The dollar sign ($) special character defi nes the end anchor. Add this special character
+after a text pattern to indicate that the line of data must end with the text pattern:
+
+$ echo "This is a good book" | sed -n '/book$/p'
+This is a good book
+$ echo "This book is good" | sed -n '/book$/p'
+$
+
+The problem with an ending text pattern is that you must be careful what you’re looking for:
+
+$ echo "There are a lot of good books" | sed -n '/book$/p'
+$
+
+Making the word “book” plural at the end of the line means that it no longer matches the
+regular expression pattern, even though book is in the data stream. The text pattern must
+be the last thing on the line for the pattern to match.
+
+---------------------------
+
+Combining anchors
+
+In some common situations, you can combine both the start and end anchor on the same
+line. In the fi rst situation, suppose you want to look for a line of data containing only a
+specifi c text pattern:
+
+$ cat data4
+this is a test of using both anchors
+I said this is a test
+this is a test
+I'm sure this is a test.
+$ sed -n '/^this is a test$/p' data4
+this is a test
+$
+
+The sed editor ignores the lines that include other text besides the specifi ed text.
+The second situation may seem a little odd at fi rst but is extremely useful. By combining
+both anchors in a pattern with no text, you can fi lter blank lines from the data stream.
+Consider this example:
+
+$ cat data5
+This is one test line.
+This is another test line.
+$ sed '/^$/d' data5
+This is one test line.
+This is another test line.
+$
+
+--------------------------------------------------------------
+The dot character
+
+The dot special character is used to match any single character except a newline character. The
+dot character must match a character, however; if there’s no character in the place of the dot,
+then the pattern fails.
+
+$ cat data6
+This is a test of a line.
+The cat is sleeping.
+That is a very nice hat.
+This test is at line four.
+at ten o'clock we'll go home.
+$ sed -n '/.at/p' data6
+The cat is sleeping.
+That is a very nice hat.
+This test is at line four.
+$
+
+
+You should be able to fi gure out why the fi rst line failed and why the second and third
+lines passed. The fourth line is a little tricky. Notice that we matched the at, but there’s
+
+no character in front of it to match the dot character. Ah, but there is! In regular expres-
+sions, spaces count as characters, so the space in front of the at matches the pattern. The
+
+fi fth line proves this, by putting the at in the front of the line, which fails to match the
+pattern.
+
+--------------------------------------------------------------
+
+Character classes
+
+The dot special character is great for matching a character position against any character,
+but what if you want to limit what characters to match? This is called a character class in
+regular expressions.
+
+You can defi ne a class of characters that would match a position in a text pattern. If one of
+the characters from the character class is in the data stream, it matches the pattern.
+
+To defi ne a character class, you use square brackets. The brackets should contain any char-
+acter you want to include in the class. You then use the entire class within a pattern just
+like any other wildcard character. This takes a little getting used to at fi rst, but after you
+catch on, it can generate some pretty amazing results.
+
+The following is an example of creating a character class:
+
+$ cat testfile.txt
+The cat is sleeping.
+That is a very nice hat.
+$ sed -n '/[ch]at/p' data6
+The cat is sleeping.
+That is a very nice hat.
+$
+
+You can use more than one character class in a single expression:
+
+$ echo "Yes" | sed -n '/[Yy][Ee][Ss]/p'
+Yes
+$ echo "yEs" | sed -n '/[Yy][Ee][Ss]/p'
+yEs
+$ echo "yeS" | sed -n '/[Yy][Ee][Ss]/p'
+yeS
+$
+
+One extremely popular use for character classes is parsing words that might be misspelled,
+such as data entered from a user form. You can easily create regular expressions that can
+accept common misspellings in data:
+
+$ cat data9
+I need to have some maintenence done on my car.
+I'll pay that in a seperate invoice.
+After I pay for the maintenance my car will be as good as new.
+
+$ sed -n '
+/maint[ea]n[ae]nce/p
+/sep[ea]r[ea]te/p
+' data9
+I need to have some maintenence done on my car.
+I'll pay that in a seperate invoice.
+After I pay for the maintenance my car will be as good as new.
+$
+
+The two sed print commands in this example utilize regular expression character classes
+to help catch the misspelled words, maintenance and separate, in the text. The same regular
+expression pattern also matches the properly spelled occurrence of “maintenance.”
+
+Negating character classes
+
+In regular expression patterns, you can also reverse the effect of a character class. Instead of
+looking for a character contained in the class, you can look for any character that’s not in the
+class. To do that, just place a caret character at the beginning of the character class range:
+
+$ sed -n '/[^ch]at/p' data6
+This test is at line four.
+$
+
+By negating the character class, the regular expression pattern matches any character
+that’s neither a c nor an h, along with the text pattern. Because the space character fi ts
+this category, it passed the pattern match. However, even with the negation, the character
+class must still match a character, so the line with the at in the start of the line still
+doesn’t match the pattern.
+
+--------------------------------------------------------------
+
+Using ranges
+
+You may have noticed when I showed the ZIP code example earlier that it was somewhat
+awkward having to list all the possible digits in each character class. Fortunately, you can
+use a shortcut so you don’t have to do that.
+
+You can use a range of characters within a character class by using the dash symbol. Just
+specify the fi rst character in the range, a dash, and then the last character in the range.
+The regular expression includes any character that’s within the specifi ed character range,
+according to the character set used by the Linux system (see Chapter 2).
+Now you can simplify the ZIP code example by specifying a range of digits:
+
+$ cat data8
+60633
+46201
+223001
+4353
+22203
+$ sed -n '/^[0-9][0-9][0-9][0-9][0-9]$/p' data8
+60633
+46201
+45902
+$
+
+The same technique works with letters:
+$ sed -n '/[c-h]at/p' data6
+The cat is sleeping.
+
+That is a very nice hat.
+$
+
+You can also specify multiple, non-continuous ranges in a single character class:
+
+$ sed -n '/[a-ch-m]at/p' data6
+The cat is sleeping.
+That is a very nice hat.
+$
+
+The character class allows the ranges a through c, and h through m to appear before the at
+text. This range would reject any letters between d and g:
+$ echo "I'm getting too fat." | sed -n '/[a-ch-m]at/p'
+$
+
+This pattern rejected the fat text, as it wasn’t in the specifi ed range.
