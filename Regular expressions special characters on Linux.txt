@@ -219,3 +219,116 @@ $ echo "I'm getting too fat." | sed -n '/[a-ch-m]at/p'
 $
 
 This pattern rejected the fat text, as it wasn’t in the specifi ed range.
+
+--------------------------------------------------------------
+
+Special character classes
+
+In addition to defi ning your own character classes, the BRE contains special character
+classes you can use to match against specifi c types of characters. Table 20-1 describes the
+BRE special characters you can use.
+
+
+Class 		Description
+[[:alpha:]] Matches any alphabetical character, either upper or lower case
+[[:alnum:]] Matches any alphanumeric character 0–9, A–Z, or a–z
+[[:blank:]] Matches a space or Tab character
+[[:digit:]] Matches a numerical digit from 0 through 9
+[[:lower:]] Matches any lowercase alphabetical character a–z
+[[:print:]] Matches any printable character
+[[:punct:]] Matches a punctuation character
+[[:space:]] Matches any whitespace character: space, Tab, NL, FF, VT, CR
+[[:upper:]] Matches any uppercase alphabetical character A–Z
+
+You use the special character classes just as you would a normal character class in your
+regular expression patterns:
+$ echo "abc" | sed -n '/[[:digit:]]/p'
+$
+
+$ echo "abc" | sed -n '/[[:alpha:]]/p'
+abc
+$ echo "abc123" | sed -n '/[[:digit:]]/p'
+abc123
+$ echo "This is, a test" | sed -n '/[[:punct:]]/p'
+This is, a test
+$ echo "This is a test" | sed -n '/[[:punct:]]/p'
+
+--------------------------------------------------------------
+
+The asterisk
+
+Placing an asterisk after a character signifi es that the character must appear zero or more
+times in the text to match the pattern:
+
+$ echo "ik" | sed -n '/ie*k/p'
+ik
+$ echo "iek" | sed -n '/ie*k/p'
+iek
+$ echo "ieek" | sed -n '/ie*k/p'
+ieek
+$ echo "ieeek" | sed -n '/ie*k/p'
+ieeek
+$ echo "ieeeek" | sed -n '/ie*k/p'
+ieeeek
+$
+
+This pattern symbol is commonly used for handling words that have a common misspelling
+or variations in language spellings. For example, if you need to write a script that may be
+used in either American or British English, you could write:
+
+$ echo "I'm getting a color TV" | sed -n '/colou*r/p'
+I'm getting a color TV
+$ echo "I'm getting a colour TV" | sed -n '/colou*r/p'
+I'm getting a colour TV
+$
+
+The u* in the pattern indicates that the letter u may or may not appear in the text to
+match the pattern. Similarly, if you know of a word that is commonly misspelled, you can
+accommodate it by using the asterisk:
+
+$ echo "I ate a potatoe with my lunch." | sed -n '/potatoe*/p'
+I ate a potatoe with my lunch.
+$ echo "I ate a potato with my lunch." | sed -n '/potatoe*/p'
+I ate a potato with my lunch.
+$
+
+Placing an asterisk next to the possible extra letter allows you to accept the
+misspelled word.
+
+Another handy feature is combining the dot special character with the asterisk special
+character. This combination provides a pattern to match any number of any characters. It’s
+often used between two text strings that may or may not appear next to each other in the
+data stream:
+
+$ echo "this is a regular pattern expression" | sed -n '
+> /regular.*expression/p'
+this is a regular pattern expression
+$
+
+Using this pattern, you can easily search for multiple words that may appear anywhere in a
+line of text in the data stream.
+
+The asterisk can also be applied to a character class. This allows you to specify a group or
+range of characters that can appear more than once in the text:
+
+$ echo "bt" | sed -n '/b[ae]*t/p'
+bt
+$ echo "bat" | sed -n '/b[ae]*t/p'
+bat
+$ echo "bet" | sed -n '/b[ae]*t/p'
+bet
+$ echo "btt" | sed -n '/b[ae]*t/p'
+btt
+$
+$ echo "baat" | sed -n '/b[ae]*t/p'
+baat
+$ echo "baaeeet" | sed -n '/b[ae]*t/p'
+baaeeet
+$ echo "baeeaeeat" | sed -n '/b[ae]*t/p'
+baeeaeeat
+$ echo "baakeeet" | sed -n '/b[ae]*t/p'
+$
+
+As long as the a and e characters appear in any combination between the b and t characters
+(including not appearing at all), the pattern matches. If any other character outside of the
+defi ned character class appears, the pattern match fails.
